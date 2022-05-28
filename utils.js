@@ -10,17 +10,6 @@ const {
     pushbulletSendSms
 } = require("./sms");
 
-// this template is DLT registered (consider immutable)
-const constructSms = (var1, var2) => {
-    return (
-        'Dear user,\n' +
-        'You Rainbow query result is ' + var1 + ' ' + (var2 ? var2 : '') + '. Please do not share this.\n' +
-        '\n' +
-        'Regards,\n' +
-        'Rainbow Team '
-    )
-}
-
 const handleSmsSendingTask = async (receiver, content) => {
     let smsService = pushbulletSendSms;
     try {

@@ -1,6 +1,5 @@
 const { publishMessage } = require("./utils.js");
 const {
-    parseBodyForTextLocal,
     parseBodyForIfttt
 } = require('./body-parser');
 
