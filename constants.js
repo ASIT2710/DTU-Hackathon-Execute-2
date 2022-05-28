@@ -10,6 +10,11 @@ module.exports = Object.freeze({
     txnTable: 'userTxn',
     bucketTable: 'userBucket',
     requestType: {
+        khata: 'khata',
+        creditHistory: 'creditHistory',
+        creditTotal: 'creditTotal',
+        debtHistory: 'debtHistory',
+        debtTotal: 'debtTotal',
         deposit: 'deposit',
         withdraw: 'withdraw',
         register: 'register',
