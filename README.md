@@ -108,10 +108,28 @@ createdAt
 phoneWithBucketName (pk)
 balance
 ```
-
-
-Tests checklist (manual)
 ---
+## Docs
+- [Dynamodb document client](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-document-client.html)
+- Setup awscli for deploy script `deploy.sh`:
+```
+python3 -m venv .venv
+.venv/bin/pip install awscli
+```
+- To build & deploy:
+
+sink (receive incoming sms)
+```shell
+./deploy.sh sink
+```
+
+worker (process sms)
+```shell
+./deploy.sh worker
+```
+
+---
+## Tests checklist (manual)
 - [ ] Register new account
 - [ ] Collect cash from customers using agents
 - [ ] ATM Deposit
