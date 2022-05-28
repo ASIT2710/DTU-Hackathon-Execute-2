@@ -129,6 +129,32 @@ worker (process sms)
 ```
 
 ---
+## AWS Shenanigans
+**Note:** If `elasticache` is in private subnet
+- Lambda function needs to be inside vpc and must be associated with privates subnets same as `elasticache`
+- AWS VPC endpoints needs to be setup for - `SQS` & `DynamoDB`, since requests for these services travels through internet
+- Environment variables (Key: Value), needs to be set for lambda functions:
+```shell
+ACCESS_KEY_ID:	---
+QUEUE_URL:	https://---.fifo
+REDIS_ENDPOINT:	redis://---.aps1.cache.amazonaws.com:6379
+REGION:	ap-south-1
+SECRET_ACCESS_KEY:	---
+```
+- Modify config: timeout to 30seconds at least, Memory to 256mb
+- Add follwing policies to the role (not ideal setup, just a shotgun approach):
+```shell
+AWSLambdaBasicExecutionRole-64...ef	(already exist, add the remaining 👇)
+AmazonSQSFullAccess
+AmazonElastiCacheFullAccess
+AmazonDynamoDBFullAccess
+AWSLambdaDynamoDBExecutionRole
+AdministratorAccess
+AWSLambdaSQSQueueExecutionRole
+AWSLambdaInvocation-DynamoDB
+AWSLambdaVPCAccessExecutionRole
+```
+---
 ## Tests checklist (manual)
 - [ ] Register new account
 - [ ] Collect cash from customers using agents
