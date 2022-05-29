@@ -23,7 +23,7 @@ const {
     getUserAccountByPhone,
     updateBucket,
     getBucketBalance,
-    getCachedOtpForTxn, isDebitPossible
+    getCachedOtpForTxn, isDebitPossible, registerCredit
 } = require("./dal");
 
 const handleRegisterNewAccount = async (phone, pan, name, location) => {
@@ -308,8 +308,8 @@ const handleFloating = (who, howMuch) => {
     // todo: implement
 }
 
-const handleCredit = async (debtorPhone, amount, period) => {
-    // todo: implement
+const handleCredit = async (creditorPhone, debtorPhone, amount, period) => {
+    await registerCredit(creditorPhone, debtorPhone, amount, period);
 }
 
 const handleDebtCollect = async (amount, debtorPhone, creditorPhone) => {
@@ -554,6 +554,7 @@ exports.handler = async (event) => {
             const amount = message.replace('CREDIT ', '').split(' ')[1];
             const period = message.replace('CREDIT ', '').split(' ')[2];
             await handleCredit(
+                sender.toPhoneNumberDbKey(),
                 debtorPhone.toPhoneNumberDbKey(),
                 parseInt(amount, 10),
                 parseInt(period, 10)

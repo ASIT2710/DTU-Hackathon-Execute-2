@@ -296,7 +296,77 @@ const getCachedOtpForTxn = async (txnId) => {
     return await cache.get(key)
 }
 
+const getCreditHistory = async (creditorPhone, debtorPhone) => {
+    const res = await ddbDocClient.get({
+        TableName: constants.creditHistoryTable,
+        Key: { 'creditorPhone:debtorPhone': `${creditorPhone}:${debtorPhone}` }
+    }).promise();
+    if ('Item' in res) {
+        return res['Item'];
+    }
+    return null;
+}
+
+const updateKhata = async (creditorPhone, debtorPhone, money, op, note, openingBalance, createdAt) => {
+    await ddbDocClient.put({
+        TableName: constants.khataTable,
+        Item: {
+            id: randomUUID(),
+            creditorPhone,
+            debtorPhone,
+            money,
+            op,
+            note,
+            openingBalance,
+            createdAt: Date.now(),
+        }
+    }).promise();
+}
+
+const getCreditBalance = async (creditorPhone) => {
+    const res = await ddbDocClient.get({
+        TableName: constants.creditTotalTable,
+        Key: { 'creditorPhone': creditorPhone }
+    }).promise();
+    if ('Item' in res) {
+        return res['Item'];
+    }
+    return null;
+}
+
+const addToCreditBalance = async (creditorPhone, amount) => {
+    const opening = await getCreditHistory(creditorPhone);
+    await ddbDocClient.put({
+        TableName: constants.creditTotalTable,
+        Item: {
+            ...opening,
+            balance: ((opening === null) ? 0 : opening.balance) + amount
+        }
+    }).promise()
+}
+
+const registerCredit = async (creditorPhone, debtorPhone, amount, period) => {
+    const opening = getCreditHistory(creditorPhone, debtorPhone);
+    let balance = 0;
+    if (opening === null) {
+        // register first
+        balance = amount;
+    } else {
+        // increment amount
+        balance = amount + opening.balance;
+    }
+    await ddbDocClient.put({
+        TableName: constants.creditHistoryTable,
+        Item: {
+            'creditorPhone:debtorPhone': `${creditorPhone}:${debtorPhone}`,
+            balance: amount,
+        }
+    }).promise();
+    await addToCreditBalance(creditorPhone, amount);
+}
+
 module.exports = {
+    registerCredit,
     isDebitPossible,
     getCachedOtpForTxn,
     getBucketBalance,
