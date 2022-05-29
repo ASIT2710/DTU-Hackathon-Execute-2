@@ -23,7 +23,8 @@ const {
     getUserAccountByPhone,
     updateBucket,
     getBucketBalance,
-    getCachedOtpForTxn, isDebitPossible, registerCredit
+    getCachedOtpForTxn, isDebitPossible, registerCredit, getCreditBalance, getDebtBalance, handleDebtCollected,
+    getCreditHistory, getDebtHistory
 } = require("./dal");
 
 const handleRegisterNewAccount = async (phone, pan, name, location) => {
@@ -310,26 +311,39 @@ const handleFloating = (who, howMuch) => {
 
 const handleCredit = async (creditorPhone, debtorPhone, amount, period) => {
     await registerCredit(creditorPhone, debtorPhone, amount, period);
+    await sendSms(creditorPhone, `SUCCESS`);
 }
 
 const handleDebtCollect = async (amount, debtorPhone, creditorPhone) => {
-    // todo: implement
+    await handleDebtCollected(amount, debtorPhone, creditorPhone);
 }
 
-const handleCreditHist = async (creditorPhone) => {
-    // todo: implement
+const handleCreditHist = async (creditorPhone, debtorPhone) => {
+    const res = await getCreditHistory(creditorPhone, debtorPhone)
+    if (res) {
+        await sendSms(creditorPhone, res.balance);
+    }
 }
 
-const handleDebtHist = async (creditorPhone) => {
-    // todo: implement
+const handleDebtHist = async (debtorPhone, creditorPhone) => {
+    const res = await getDebtHistory(debtorPhone, creditorPhone)
+    if (res) {
+        await sendSms(debtorPhone, res.balance);
+    }
 }
 
 const handleCreditHistBal = async (creditorPhone) => {
-    // todo: implement
+    const res = await getCreditBalance(creditorPhone);
+    if (res) {
+        await sendSms(creditorPhone, `Rs.${res.balance}`);
+    }
 }
 
 const handleDebtHistBal = async (debtorPhone) => {
-    // todo: implement
+    const res = await getDebtBalance(debtorPhone);
+    if (res) {
+        await sendSms(debtorPhone, `Rs.${res.balance}`);
+    }
 }
 
 const handleTransactionVerification = async (from, message) => {
@@ -578,6 +592,7 @@ exports.handler = async (event) => {
         if (message.startsWith('CREDITHIST')) {
             const debtorPhone = message.replace('CREDITHIST ', '').split(' ')[0];
             await handleCreditHist(
+                sender.toPhoneNumberDbKey(),
                 debtorPhone.toPhoneNumberDbKey(),
             )
         }
@@ -585,6 +600,7 @@ exports.handler = async (event) => {
         if (message.startsWith('DEBITHIST')) {
             const creditorPhone = message.replace('DEBITHIST ', '').split(' ')[0];
             await handleDebtHist(
+                sender.toPhoneNumberDbKey(),
                 creditorPhone.toPhoneNumberDbKey(),
             )
         }
@@ -592,10 +608,11 @@ exports.handler = async (event) => {
         if (message.startsWith('CREDITHIST BALANCE')) {
             await handleCreditHistBal(
                 sender.toPhoneNumberDbKey(),
+
             )
         }
 
-        if (message.startsWith('DEBITHIST')) {
+        if (message.startsWith('DEBTHIST BALANCE')) {
             await handleDebtHistBal(
                 sender.toPhoneNumberDbKey(),
             )

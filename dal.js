@@ -307,7 +307,7 @@ const getCreditHistory = async (creditorPhone, debtorPhone) => {
     return null;
 }
 
-const updateKhata = async (creditorPhone, debtorPhone, money, op, note, openingBalance, createdAt) => {
+const updateKhata = async (creditorPhone, debtorPhone, money, op, note, openingBalance) => {
     await ddbDocClient.put({
         TableName: constants.khataTable,
         Item: {
@@ -335,7 +335,7 @@ const getCreditBalance = async (creditorPhone) => {
 }
 
 const addToCreditBalance = async (creditorPhone, amount) => {
-    const opening = await getCreditHistory(creditorPhone);
+    const opening = await getCreditBalance(creditorPhone);
     await ddbDocClient.put({
         TableName: constants.creditTotalTable,
         Item: {
@@ -359,13 +359,75 @@ const registerCredit = async (creditorPhone, debtorPhone, amount, period) => {
         TableName: constants.creditHistoryTable,
         Item: {
             'creditorPhone:debtorPhone': `${creditorPhone}:${debtorPhone}`,
-            balance: amount,
+            balance,
         }
     }).promise();
     await addToCreditBalance(creditorPhone, amount);
+    await updateKhata(
+        creditorPhone,
+        debtorPhone,
+        amount,
+        "credit",
+        "credit lended",
+        opening ? opening.balance : 0
+    )
+}
+
+const getDebtBalance = async (debtorPhone) => {
+    const res = await ddbDocClient.get({
+        TableName: constants.debtTotalTable,
+        Key: { 'debtorPhone': debtorPhone }
+    }).promise();
+    if ('Item' in res) {
+        return res['Item'];
+    }
+    return null;
+}
+
+const getDebtHistory = async (debtorPhone, creditorPhone) => {
+    const res = await ddbDocClient.get({
+        TableName: constants.debtHistoryTable,
+        Key: { 'debtorPhone:creditorPhone': `${debtorPhone}:${creditorPhone}` }
+    }).promise();
+    if ('Item' in res) {
+        return res['Item'];
+    }
+    return null;
+}
+
+const handleDebtCollected = async (amount, debtorPhone, creditorPhone) => {
+    const opening = await getDebtHistory(debtorPhone, creditorPhone);
+    await ddbDocClient.put({
+        TableName: constants.debtHistoryTable,
+        Item: {
+            'debtorPhone:creditorPhone': `${debtorPhone}:${creditorPhone}`,
+            balance: opening.balance - amount,
+        }
+    }).promise();
+    const openingTotal = await getDebtBalance(debtorPhone);
+    await ddbDocClient.put({
+        TableName: constants.debtHistoryTable,
+        Item: {
+            'debtorPhone': debtorPhone,
+            balance: openingTotal.balance - amount,
+        }
+    }).promise()
+    await updateKhata(
+        creditorPhone,
+        debtorPhone,
+        amount,
+        "paid",
+        "debt paid",
+        opening ? opening.balance : 0
+    );
 }
 
 module.exports = {
+    getDebtHistory,
+    getCreditHistory,
+    handleDebtCollected,
+    getDebtBalance,
+    getCreditBalance,
     registerCredit,
     isDebitPossible,
     getCachedOtpForTxn,
