@@ -16,6 +16,8 @@ module.exports = Object.freeze({
     debtTotalTable: 'debtTotal',
     depositTable: 'deposit',
     requestType: {
+        creditLent: 'creditLent',
+        debtPaid: 'debtPaid',
         withdraw: 'withdraw',
         register: 'register',
         collect: 'collect',
@@ -34,7 +36,9 @@ module.exports = Object.freeze({
     },
     op: {
         debit: 'debit',
-        credit: 'credit'
+        credit: 'credit',
+        paid: 'paid',
+        lent: 'lent',
     },
     txnUidSize: 6,
     txnUidRetryAttempts: 10,

@@ -309,9 +309,39 @@ const handleFloating = (who, howMuch) => {
     // todo: implement
 }
 
-const handleCredit = async (creditorPhone, debtorPhone, amount, period) => {
+const handleCreditStartTxn = async (creditorPhone, debtorPhone, amount) => {
+    if (creditorPhone  === debtorPhone) {
+        console.log('handleCollect err - agent and customer cannot be same');
+        return;
+    }
+    await createTxn(
+        creditorPhone,
+        debtorPhone,
+        constants.requestType.creditLent,
+        amount,
+        creditorPhone.toPhoneNumber(),
+        debtorPhone.toPhoneNumber(),
+    )
+}
+
+const handleCreditRegister = async (creditorPhone, debtorPhone, amount, period) => {
     await registerCredit(creditorPhone, debtorPhone, amount, period);
     await sendSms(creditorPhone, `SUCCESS`);
+}
+
+const handleDebtCollectStartTxn = async (agentPhone, amount, debtorPhone, creditorPhone) => {
+    if (creditorPhone  === debtorPhone) {
+        console.log('handleCollect err - agent and customer cannot be same');
+        return;
+    }
+    await createTxn(
+        debtorPhone,
+        creditorPhone,
+        constants.requestType.debtPaid,
+        amount,
+        debtorPhone.toPhoneNumber(),
+        agentPhone.toPhoneNumber(),
+    )
 }
 
 const handleDebtCollect = async (amount, debtorPhone, creditorPhone) => {
@@ -417,11 +447,26 @@ const handleTransactionVerification = async (from, message) => {
                             txn['money'],
                             `Collected cash, txnId ${txnId}`);
                         break;
+                    case constants.requestType.creditLent:
+                        await handleCreditRegister(
+                            txn['firstParty'],
+                            txn['secondParty'],
+                            constants.op.lent,
+                            txn['money'],
+                            `Credit lent, txnId ${txnId}`);
+                        break;
+                    case constants.requestType.debtPaid:
+                        await handleDebtCollect(
+                            txn['money'],
+                            txn['firstParty'],
+                            txn['secondParty'],
+                            constants.op.paid,
+                            `Debt paid, txnId ${txnId}`);
+                        break;
                     default:
                         console.log(`txn requestType ${txn.requestType} cannot be handled`);
                         break;
                 }
-
             }
         }
     }
@@ -559,7 +604,7 @@ exports.handler = async (event) => {
         }
         // declare floating cash
         if (message.startsWith('FLOATING')) {
-            // todo: implement
+            // todo: implement handleFloating
             return;
         }
 
@@ -567,12 +612,18 @@ exports.handler = async (event) => {
             const debtorPhone = message.replace('CREDIT ', '').split(' ')[0];
             const amount = message.replace('CREDIT ', '').split(' ')[1];
             const period = message.replace('CREDIT ', '').split(' ')[2];
-            await handleCredit(
+            await handleCreditStartTxn(
                 sender.toPhoneNumberDbKey(),
                 debtorPhone.toPhoneNumberDbKey(),
                 parseInt(amount, 10),
                 parseInt(period, 10)
             )
+            // await handleCredit(
+            //     sender.toPhoneNumberDbKey(),
+            //     debtorPhone.toPhoneNumberDbKey(),
+            //     parseInt(amount, 10),
+            //     parseInt(period, 10)
+            // )
             return;
         }
 
@@ -581,11 +632,17 @@ exports.handler = async (event) => {
             const amount = message.replace(`${key} `, '').split(' ')[0];
             const debtor = message.replace(`${key} `, '').split(' ')[1];
             const creditor = message.replace(`${key} `, '').split(' ')[2];
-            await handleDebtCollect(
+            await handleDebtCollectStartTxn(
+                sender.toPhoneNumberDbKey(),
                 parseInt(amount, 10),
                 debtor.toPhoneNumberDbKey(),
                 creditor.toPhoneNumberDbKey()
             )
+            // await handleDebtCollect(
+            //     parseInt(amount, 10),
+            //     debtor.toPhoneNumberDbKey(),
+            //     creditor.toPhoneNumberDbKey()
+            // )
             return ;
         }
 
