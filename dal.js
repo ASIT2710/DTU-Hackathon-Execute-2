@@ -368,7 +368,7 @@ const registerCredit = async (creditorPhone, debtorPhone, amount, period) => {
         debtorPhone,
         amount,
         "credit",
-        "credit lended",
+        "credit lent",
         opening ? opening.balance : 0
     )
 }

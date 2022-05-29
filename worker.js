@@ -23,8 +23,14 @@ const {
     getUserAccountByPhone,
     updateBucket,
     getBucketBalance,
-    getCachedOtpForTxn, isDebitPossible, registerCredit, getCreditBalance, getDebtBalance, handleDebtCollected,
-    getCreditHistory, getDebtHistory
+    getCachedOtpForTxn,
+    isDebitPossible,
+    registerCredit,
+    getCreditBalance,
+    getDebtBalance,
+    handleDebtCollected,
+    getCreditHistory,
+    getDebtHistory
 } = require("./dal");
 
 const handleRegisterNewAccount = async (phone, pan, name, location) => {
